@@ -29,7 +29,9 @@ runs:
   using: composite
   steps:
     - run: |
-        curl -L --output split-test https://github.com/mtsmfm/split-test/releases/download/v1.1.0/split-test-${{ inputs.architecture }}-unknown-linux-gnu
+        curl -fsSL --retry 5 --retry-delay 10 --retry-all-errors \
+          -o split-test \
+          https://github.com/mtsmfm/split-test/releases/download/v1.1.0/split-test-${{ inputs.architecture }}-unknown-linux-gnu
         chmod +x split-test
       shell: bash
       working-directory: ${{ inputs.working-directory }}
