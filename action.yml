@@ -6,7 +6,12 @@ inputs:
     required: true
   glob:
     description: Glob pattern to search test files.
-    required: true
+    required: false
+    default: ""
+  globs:
+    description: Glob patterns to search test files. Use a multiline string to pass multiple patterns.
+    required: false
+    default: ""
   index:
     description: 0-based index of test node.
     required: true
@@ -34,20 +39,15 @@ runs:
       shell: bash
       working-directory: ${{ inputs.working-directory }}
     - id: split-tests
-      run: |
-        PATHS=$(
-          ./split-test \
-            --junit-xml-report-dir "${{ inputs.reports }}" \
-            --node-index "${{ inputs.index }}" \
-            --node-total "${{ inputs.total }}" \
-            --tests-glob "${{ inputs.glob }}" |
-            sed "s;^$(pwd)/;;" |
-            tr '\n' ' '
-        )
-        echo "paths=${PATHS}"
-        echo "paths=${PATHS}" >> $GITHUB_OUTPUT
+      run: "${GITHUB_ACTION_PATH}/scripts/split-tests"
       shell: bash
       working-directory: ${{ inputs.working-directory }}
+      env:
+        INPUT_REPORTS: ${{ inputs.reports }}
+        INPUT_INDEX: ${{ inputs.index }}
+        INPUT_TOTAL: ${{ inputs.total }}
+        INPUT_GLOB: ${{ inputs.glob }}
+        INPUT_GLOBS: ${{ inputs.globs }}
     - run: rm split-test
       shell: bash
       working-directory: ${{ inputs.working-directory }}

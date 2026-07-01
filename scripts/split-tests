@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+trim() {
+  local value="$1"
+  value="${value#"${value%%[![:space:]]*}"}"
+  value="${value%"${value##*[![:space:]]}"}"
+  printf '%s' "$value"
+}
+
+split_args=()
+
+while IFS= read -r line || [ -n "$line" ]; do
+  pattern="$(trim "$line")"
+  if [ -n "$pattern" ]; then
+    split_args+=(--tests-glob "$pattern")
+  fi
+done <<< "${INPUT_GLOBS:-}"
+
+if [ "${#split_args[@]}" -eq 0 ]; then
+  fallback_glob="$(trim "${INPUT_GLOB:-}")"
+  if [ -z "$fallback_glob" ]; then
+    echo "::error::Either the 'glob' input or at least one non-empty line in the 'globs' input is required." >&2
+    exit 1
+  fi
+  split_args+=(--tests-glob "$fallback_glob")
+fi
+
+PATHS=$(
+  ./split-test \
+    --junit-xml-report-dir "${INPUT_REPORTS}" \
+    --node-index "${INPUT_INDEX}" \
+    --node-total "${INPUT_TOTAL}" \
+    "${split_args[@]}" |
+    sed "s;^$(pwd)/;;" |
+    tr '\n' ' '
+)
+
+echo "paths=${PATHS}"
+echo "paths=${PATHS}" >> "$GITHUB_OUTPUT"
