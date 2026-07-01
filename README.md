@@ -14,7 +14,7 @@ GitHub Action to split test files based on JUnit XML reports, as [`circleci test
     - Optional when `globs` is set.
     - e.g. `spec/**/*_spec.rb`
 - `globs`
-    - Glob patterns to search test files. Use a multiline string to pass multiple test pools to `split-test`.
+    - Glob patterns to search test files. Use a multiline string to pass multiple patterns for one test pool to `split-test`.
     - Empty lines are ignored, and leading and trailing whitespace is trimmed.
     - Optional when `glob` is set.
     - e.g.
