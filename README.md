@@ -10,8 +10,19 @@ GitHub Action to split test files based on JUnit XML reports, as [`circleci test
     - Path to directory where JUnit XML reports are stored.
     - e.g. `tmp/junit-xml-reports`
 - `glob`
-    - Glob pattern to search test files.
+    - Glob pattern to search test files. Use this for a single test pool.
+    - Optional when `globs` is set.
     - e.g. `spec/**/*_spec.rb`
+- `globs`
+    - Glob patterns to search test files. Use a multiline string to pass multiple patterns for one test pool to `split-test`.
+    - Empty lines are ignored, and leading and trailing whitespace is trimmed.
+    - Optional when `glob` is set.
+    - e.g.
+      ```yaml
+      globs: |
+        spec/models/**/*_spec.rb
+        spec/requests/**/*_spec.rb
+      ```
 - `index`
     - 0-based index of test node.
     - e.g. `0`
@@ -63,31 +74,75 @@ jobs:
       - uses: ruby/setup-ruby@v1
         with:
           bundler-cache: true
-    - uses: dawidd6/action-download-artifact@v2
-      with:
-        branch: main
-        name: junit-xml-reports
-        path: tmp/junit-xml-reports-downloaded
-      continue-on-error: true
-    - uses: r7kamura/split-tests-by-timings@v0
-      id: split-tests
-      with:
-        reports: tmp/junit-xml-reports-downloaded
-        glob: spec/**/*_spec.rb
-        index: ${{ matrix.ci_node_index }}
-        total: 4
-    - run : |
-        bundle exec rspec \
-          --format progress \
-          --format RspecJunitFormatter \
-          --out tmp/junit-xml-reports/junit-xml-report-${{ matrix.ci_node_index }}.xml \
-          ${{ steps.split-tests.outputs.paths }}
-    - if: github.ref == 'refs/heads/main'
-      uses: actions/upload-artifact@v3
-      with:
-        if-no-files-found: error
-        name: junit-xml-reports
-        path: tmp/junit-xml-reports
+      - uses: dawidd6/action-download-artifact@v2
+        with:
+          branch: main
+          name: junit-xml-reports
+          path: tmp/junit-xml-reports-downloaded
+        continue-on-error: true
+      - uses: s4na/split-tests-by-timings@v0
+        id: split-tests
+        with:
+          reports: tmp/junit-xml-reports-downloaded
+          glob: spec/**/*_spec.rb
+          index: ${{ matrix.ci_node_index }}
+          total: 4
+      - run : |
+          bundle exec rspec \
+            --format progress \
+            --format RspecJunitFormatter \
+            --out tmp/junit-xml-reports/junit-xml-report-${{ matrix.ci_node_index }}.xml \
+            ${{ steps.split-tests.outputs.paths }}
+      - if: github.ref == 'refs/heads/main'
+        uses: actions/upload-artifact@v3
+        with:
+          if-no-files-found: error
+          name: junit-xml-reports
+          path: tmp/junit-xml-reports
+```
+
+### Splitting browser and non-browser specs
+
+Use `globs` when a test pool is better described by multiple include patterns. Each non-empty line is passed to `split-test` as a separate quoted `--tests-glob` argument, so patterns such as `*` and `**` are not expanded by the shell.
+
+```yaml
+- uses: s4na/split-tests-by-timings@v0
+  id: split-browser-tests
+  with:
+    reports: tmp/junit-xml-reports-downloaded
+    globs: |
+      spec/system/**/*_spec.rb
+    index: ${{ matrix.pool_index }}
+    total: ${{ matrix.pool_total }}
+```
+
+```yaml
+- uses: s4na/split-tests-by-timings@v0
+  id: split-non-browser-tests
+  with:
+    reports: tmp/junit-xml-reports-downloaded
+    globs: |
+      spec/components/**/*_spec.rb
+      spec/controllers/**/*_spec.rb
+      spec/decorators/**/*_spec.rb
+      spec/forms/**/*_spec.rb
+      spec/helpers/**/*_spec.rb
+      spec/jobs/**/*_spec.rb
+      spec/lib/**/*_spec.rb
+      spec/mailers/**/*_spec.rb
+      spec/models/**/*_spec.rb
+      spec/policies/**/*_spec.rb
+      spec/queries/**/*_spec.rb
+      spec/requests/**/*_spec.rb
+      spec/services/**/*_spec.rb
+      spec/validators/**/*_spec.rb
+      spec/view_objects/**/*_spec.rb
+      spec/views/**/*_spec.rb
+      spec/scripts/**/*_spec.rb
+      spec/constraints/**/*_spec.rb
+      spec/initializers/**/*_spec.rb
+    index: ${{ matrix.pool_index }}
+    total: ${{ matrix.pool_total }}
 ```
 
 ## Acknowledgement
