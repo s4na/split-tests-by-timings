@@ -5,11 +5,11 @@ inputs:
     description: Path to directory where JUnit XML reports are stored.
     required: true
   glob:
-    description: Glob pattern to search test files.
+    description: Glob pattern to search test files. Required unless globs is set.
     required: false
     default: ""
   globs:
-    description: Glob patterns to search test files. Use a multiline string to pass multiple patterns.
+    description: Glob patterns to search test files. Required unless glob is set. Pass one pattern per line; empty lines are ignored.
     required: false
     default: ""
   index:
