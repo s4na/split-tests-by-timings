@@ -1,0 +1,21 @@
+name: test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install ShellCheck
+        run: sudo apt-get update && sudo apt-get install -y shellcheck
+      - name: Validate action metadata
+        run: ruby -e 'require "yaml"; YAML.load_file("action.yml")'
+      - name: Run shell tests
+        run: test/split-tests-test.sh
+      - name: Run ShellCheck
+        run: shellcheck scripts/split-tests test/split-tests-test.sh
